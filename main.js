@@ -3,14 +3,23 @@ class Main {
     #glCtx;
     #program;
     #buffer;
+    #mousepos = [0, 0];
+    #shaderList = [];
 
     constructor() {
+        this.#canvas = document.querySelector('canvas');
+        this.#canvas.addEventListener('mousemove', (e) => {
+            this.#mousepos = [e.clientX, e.clientY];
+        });
+
         window.onresize = this.resize.bind(this);
+
+        this.#glCtx = this.#canvas.getContext('webgl') || this.#canvas.getContext('experimental-webgl');
     }
 
     async initialize() {
-        this.#canvas = document.querySelector('canvas');
-        this.#glCtx = this.#canvas.getContext('webgl') || this.#canvas.getContext('experimental-webgl');
+        this.#shaderList = await this.getShaderList('/shaders/shader-list.json');
+        this.fillSelect(this.#shaderList);
 
         if (!this.#glCtx) {
             console.error('Your browser does not support WebGL.')
@@ -27,18 +36,26 @@ class Main {
             console.error(`Error when trying to link shaders: ${this.#glCtx.getProgramInfoLog(this.#program)}`);
         }
 
+        this.#program.inPos = this.#glCtx.getAttribLocation(this.#program, "inPos");
         this.#program.iTime = this.#glCtx.getUniformLocation(this.#program, "iTime");
         this.#program.iResolution = this.#glCtx.getUniformLocation(this.#program, "iResolution");
+        this.#program.iMouse = this.#glCtx.getUniformLocation(this.#program, "iMouse");
 
         this.#glCtx.useProgram(this.#program);
 
         this.createBuffer();
-        
+
         this.#glCtx.enable(this.#glCtx.DEPTH_TEST);
         this.#glCtx.clearColor(0.0, 0.0, 0.0, 1.0);
 
         this.resize();
         requestAnimationFrame(this.render.bind(this));
+    }
+
+    async getShaderList(url) {
+        const shaderListResponse = await fetch(url);
+        const shaderListText = await shaderListResponse.text();
+        return JSON.parse(shaderListText).list;
     }
 
     async createShader(url, type) {
@@ -74,7 +91,7 @@ class Main {
         this.#buffer.inx.len = inx.length;
         this.#glCtx.bindBuffer(this.#glCtx.ELEMENT_ARRAY_BUFFER, this.#buffer.inx);
         this.#glCtx.bufferData(this.#glCtx.ELEMENT_ARRAY_BUFFER, new Uint16Array(inx), this.#glCtx.STATIC_DRAW);
-        
+
         this.#glCtx.enableVertexAttribArray(this.#program.inPos);
         this.#glCtx.vertexAttribPointer(this.#program.inPos, 2, this.#glCtx.FLOAT, false, 0, 0);
     }
@@ -92,9 +109,20 @@ class Main {
 
         this.#glCtx.uniform1f(this.#program.iTime, deltaMS / 1000.0);
         this.#glCtx.uniform2f(this.#program.iResolution, this.#canvas.width, this.#canvas.height);
+        this.#glCtx.uniform2f(this.#program.iMouse, this.#mousepos[0], this.#mousepos[1]);
         this.#glCtx.drawElements(this.#glCtx.TRIANGLES, this.#buffer.inx.len, this.#glCtx.UNSIGNED_SHORT, 0);
 
         requestAnimationFrame(this.render.bind(this));
+    }
+
+    fillSelect(list) {
+        let select = document.querySelector('select');
+        this.#shaderList.forEach((_, index) => {
+            const option = document.createElement('option');
+            option.setAttribute('value', index);
+            option.appendChild(document.createTextNode(_));
+            select.appendChild(option);
+        });
     }
 }
 

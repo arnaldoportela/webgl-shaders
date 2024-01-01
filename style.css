@@ -3,3 +3,39 @@ body{
     margin: 0;
     overflow: hidden;
 }
+
+.action{
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    margin: auto;
+    padding: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+select{  
+    position: relative;
+    width: 200px;
+    padding: 5px;
+    border:none;
+    border-radius: 5px;
+    outline: none;
+    background: #00000055;
+    border: solid 1px #fff;
+    color: #fff;
+}
+
+label{
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-weight: bold;
+    color: #fff;
+    text-shadow:
+    -1px -1px 0 #000,  
+     1px -1px 0 #000,
+     -1px 1px 0 #000,
+      1px 1px 0 #000;
+}
