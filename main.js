@@ -1,35 +1,56 @@
 class Main {
     #canvas;
+    #select;
     #glCtx;
     #program;
     #buffer;
     #mousepos = [0, 0];
     #shaderList = [];
+    #activeShader;
 
     constructor() {
-        this.#canvas = document.querySelector('canvas');
+        this.#select = document.querySelector('select');
+
+        this.getShaderList('/shaders/shader-list.json')
+            .then(async (_) => {
+                this.#shaderList = _;
+                this.fillSelect(this.#shaderList);                
+
+                this.#select.addEventListener('change', async (e) => {
+                    this.#glCtx.getExtension('WEBGL_lose_context').loseContext();
+                    this.#canvas.remove();
+                    await this.init(this.#shaderList[e.target.value]);
+                });
+
+                await this.init(this.#shaderList[0]);
+            })
+
+        window.onresize = this.resize.bind(this);
+    }
+
+    async init(shaderName) {
+        this.#canvas = document.createElement('canvas');
+        document.body.appendChild(this.#canvas);
+
         this.#canvas.addEventListener('mousemove', (e) => {
             this.#mousepos = [e.clientX, e.clientY];
         });
 
-        window.onresize = this.resize.bind(this);
-
         this.#glCtx = this.#canvas.getContext('webgl') || this.#canvas.getContext('experimental-webgl');
+
+        await this.createProgram(shaderName);
     }
 
-    async initialize() {
-        this.#shaderList = await this.getShaderList('/shaders/shader-list.json');
-        this.fillSelect(this.#shaderList);
-
+    async createProgram(shaderName) {
         if (!this.#glCtx) {
-            console.error('Your browser does not support WebGL.')
+            console.error('Your browser does not support WebGL.');
             return;
         }
 
         this.#program = this.#glCtx.createProgram();
 
-        await this.createShader('/shaders/default/default.vert', this.#glCtx.VERTEX_SHADER);
-        await this.createShader('/shaders/default/default.frag', this.#glCtx.FRAGMENT_SHADER);
+        await this.createShader(`/shaders/${shaderName}/${shaderName}.vert`, this.#glCtx.VERTEX_SHADER);
+        await this.createShader(`/shaders/${shaderName}/${shaderName}.frag`, this.#glCtx.FRAGMENT_SHADER);
 
         const status = this.#glCtx.getProgramParameter(this.#program, this.#glCtx.LINK_STATUS);
         if (!status) {
@@ -104,6 +125,7 @@ class Main {
 
     render(deltaMS) {
 
+        if (!this.#glCtx.getProgramParameter(this.#program, this.#glCtx.LINK_STATUS)) return;
         this.#glCtx.viewport(0, 0, this.#canvas.width, this.#canvas.height);
         this.#glCtx.clear(this.#glCtx.COLOR_BUFFER_BIT | this.#glCtx.DEPTH_BUFFER_BIT);
 
@@ -116,14 +138,13 @@ class Main {
     }
 
     fillSelect(list) {
-        let select = document.querySelector('select');
         this.#shaderList.forEach((_, index) => {
             const option = document.createElement('option');
             option.setAttribute('value', index);
             option.appendChild(document.createTextNode(_));
-            select.appendChild(option);
+            this.#select.appendChild(option);
         });
     }
 }
 
-new Main().initialize();
+new Main();
