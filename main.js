@@ -116,7 +116,7 @@ class Main {
         this.#glCtx.bufferData(this.#glCtx.ELEMENT_ARRAY_BUFFER, new Uint16Array(geoObj.indexes), this.#glCtx.STATIC_DRAW);
 
         this.#glCtx.enableVertexAttribArray(this.#program.inPos);
-        this.#glCtx.vertexAttribPointer(this.#program.inPos, 2, this.#glCtx.FLOAT, false, 0, 0);
+        this.#glCtx.vertexAttribPointer(this.#program.inPos, 3, this.#glCtx.FLOAT, false, 0, 0);
     }
 
     resize() {
@@ -133,9 +133,9 @@ class Main {
 
         this.#glCtx.uniform1f(this.#program.iTime, deltaMS / 1000.0);
         this.#glCtx.uniform2f(this.#program.iResolution, this.#canvas.width, this.#canvas.height);
-        this.#glCtx.uniform2f(this.#program.iMouse, this.#mousepos[0], this.#mousepos[1]);
+        this.#glCtx.uniform2f(this.#program.iMouse, this.#mousepos[0], this.#mousepos[1]);        
         this.#glCtx.drawElements(this.#glCtx.TRIANGLES, this.#buffer.inx.len, this.#glCtx.UNSIGNED_SHORT, 0);
-
+        
         requestAnimationFrame(this.render.bind(this));
     }
 
