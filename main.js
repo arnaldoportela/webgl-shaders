@@ -14,7 +14,7 @@ class Main {
         this.getShaderList('/shaders/shader-list.json')
             .then(async (_) => {
                 this.#shaderList = _;
-                this.fillSelect(this.#shaderList);                
+                this.fillSelect(this.#shaderList);
 
                 this.#select.addEventListener('change', async (e) => {
                     this.#glCtx.getExtension('WEBGL_lose_context').loseContext();
@@ -64,7 +64,7 @@ class Main {
 
         this.#glCtx.useProgram(this.#program);
 
-        this.createBuffer();
+        await this.createBuffer(`/shaders/${shaderName}/${shaderName}-geo.json`);
 
         this.#glCtx.enable(this.#glCtx.DEPTH_TEST);
         this.#glCtx.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -100,18 +100,20 @@ class Main {
         this.#glCtx.linkProgram(this.#program);
     }
 
-    createBuffer() {
-        const pos = [-1, -1, 1, -1, 1, 1, -1, 1];
-        const inx = [0, 1, 2, 0, 2, 3];
+    async createBuffer(url) {
+
+        const geoResponse = await fetch(url);
+        const geoText = await geoResponse.text();
+        const geoObj = JSON.parse(geoText);
 
         this.#buffer = { pos: this.#glCtx.createBuffer() };
         this.#glCtx.bindBuffer(this.#glCtx.ARRAY_BUFFER, this.#buffer.pos);
-        this.#glCtx.bufferData(this.#glCtx.ARRAY_BUFFER, new Float32Array(pos), this.#glCtx.STATIC_DRAW);
+        this.#glCtx.bufferData(this.#glCtx.ARRAY_BUFFER, new Float32Array(geoObj.points), this.#glCtx.STATIC_DRAW);
 
         this.#buffer.inx = this.#glCtx.createBuffer();
-        this.#buffer.inx.len = inx.length;
+        this.#buffer.inx.len = geoObj.indexes.length;
         this.#glCtx.bindBuffer(this.#glCtx.ELEMENT_ARRAY_BUFFER, this.#buffer.inx);
-        this.#glCtx.bufferData(this.#glCtx.ELEMENT_ARRAY_BUFFER, new Uint16Array(inx), this.#glCtx.STATIC_DRAW);
+        this.#glCtx.bufferData(this.#glCtx.ELEMENT_ARRAY_BUFFER, new Uint16Array(geoObj.indexes), this.#glCtx.STATIC_DRAW);
 
         this.#glCtx.enableVertexAttribArray(this.#program.inPos);
         this.#glCtx.vertexAttribPointer(this.#program.inPos, 2, this.#glCtx.FLOAT, false, 0, 0);
